@@ -28,14 +28,16 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 script {
-                    dockerImage.run('-d -p 80:80')
+                    // Run Docker container using shell command instead of docker.run()
+                    sh "docker run -d -p 80:80 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                 }
             }
         }
     }
     post {
-        cleanup {
-            sh "docker rmi ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
+        always {
+            // Cleanup to free space
+            sh "docker rmi ${DOCKER_IMAGE}:${env.BUILD_NUMBER} || true"
         }
     }
 }
