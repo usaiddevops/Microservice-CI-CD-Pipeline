@@ -10,12 +10,15 @@ pipeline {
             }
         }
         stage('Build Docker Image') {
-            steps {
-                script {
-                    // Enable BuildKit for faster & modern Docker builds
-                    sh 'DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} .'
-                }
-            }
+    steps {
+        script {
+            sh '''#!/bin/bash
+            DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
+            '''
+        }
+    }
+}
+
         }
         stage('Push Docker Image') {
             steps {
