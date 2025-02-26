@@ -8,13 +8,15 @@ pipeline {
             steps {
                 git branch: 'main', url: 'https://github.com/usaiddevops/Microservice-CI-CD-Pipeline.git' // Updated GitHub repository link
             }
+           }
+     stage('Build Docker Image') {
+         steps {
+              script {
+                   sh 'DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} .'
+              }
+           }
         }
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    dockerImage = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }
-            }
+
         }
         stage('Push Docker Image') {
             steps {
