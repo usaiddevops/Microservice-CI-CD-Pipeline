@@ -1,56 +1,49 @@
 pipeline {
     agent any
-
+    environment {
+        REPO = 'your-docker-repo/your-app'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+    }
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/DaudCloud-sudo/Microservice-CI-CD-Pipeline.git']]
-                ])
+                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
             }
         }
-
-        stage('Build Frontend Docker Image') {
-            steps {
-                dir('frontend') {
-                    script {
-                        bat 'docker build -t frontend:latest .'
-                    }
-                }
-            }
-        }
-
-        stage('Build Backend Docker Image') {
-            steps {
-                dir('backend') {
-                    script {
-                        bat 'docker build -t backend:latest .'
-                    }
-                }
-            }
-        }
-
-        stage('Test Backend') {
-            steps {
-                dir('backend') {
-                    script {
-                        echo 'Running backend tests - Python-unittest for backend functionality'
-                        echo 'Test run sucessfully' 
-                    }
-                }
-            }
-        }
-
-        stage('Deploy Microservices') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Deploying frontend and backend services'
-                    bat 'docker run -d -p 80:80 frontend:latest'
-                    bat 'docker run -d -p 3000:3000 backend:latest'
+                    dockerImage = docker.build("${env.REPO}:${env.BUILD_NUMBER}")
                 }
             }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('', "${env.DOCKER_CREDENTIALS_ID}") {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-ssh-credentials']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-instance << EOF
+                    docker pull ${REPO}:${BUILD_NUMBER}
+                    docker stop your-container || true
+                    docker rm your-container || true
+                    docker run -d --name your-container -p 80:80 ${REPO}:${BUILD_NUMBER}
+                    EOF
+                    '''
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
