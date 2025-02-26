@@ -1,25 +1,25 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'usaidrehman/my-app'
+        DOCKER_IMAGE = 'usaidrehman/microservice-ci-cd-pipeline' // Updated Docker Hub repository name
     }
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
+                git branch: 'main', url: 'https://github.com/usaiddevops/Microservice-CI-CD-Pipeline.git' // Updated GitHub repository link
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("$Microservice-CI-CD-Pipeline}:${env.BUILD_NUMBER}")
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
                 }
             }
         }
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('', 'usaidrehman') {
+                    docker.withRegistry('', 'docker-hub-credentials-id') {
                         dockerImage.push()
                     }
                 }
