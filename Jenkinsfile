@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'
+                git branch: 'main', url: 'https://github.com/usaiddevops/Microservice-CI-CD-Pipeline.git'
             }
         }
         stage('Build Docker Image') {
@@ -19,7 +19,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('', 'docker-hub-credentials-id') {
+                    docker.withRegistry('', 'usaidrehman/') {
                         dockerImage.push()
                     }
                 }
