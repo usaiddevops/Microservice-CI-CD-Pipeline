@@ -1,8 +1,7 @@
 pipeline {
     agent any
     environment {
-        REPO = 'your-docker-repo/your-app'
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        DOCKER_IMAGE = 'your-dockerhub-username/your-app'
     }
     stages {
         stage('Clone Repository') {
@@ -13,37 +12,30 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${env.REPO}:${env.BUILD_NUMBER}")
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
                 }
             }
         }
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('', "${env.DOCKER_CREDENTIALS_ID}") {
+                    docker.withRegistry('', 'docker-hub-credentials-id') {
                         dockerImage.push()
                     }
                 }
             }
         }
-        stage('Deploy to EC2') {
+        stage('Deploy Application') {
             steps {
-                sshagent(['ec2-ssh-credentials']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-instance << EOF
-                    docker pull ${REPO}:${BUILD_NUMBER}
-                    docker stop your-container || true
-                    docker rm your-container || true
-                    docker run -d --name your-container -p 80:80 ${REPO}:${BUILD_NUMBER}
-                    EOF
-                    '''
+                script {
+                    dockerImage.run('-d -p 80:80')
                 }
             }
         }
     }
     post {
-        always {
-            cleanWs()
+        cleanup {
+            sh "docker rmi ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
         }
     }
 }
