@@ -1,28 +1,27 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'usaidrehman/microservice-ci-cd-pipeline' // Updated Docker Hub repository name
+        DOCKER_IMAGE = 'usaidrehman/microservice-ci-cd-pipeline' // Your Docker Hub repository
     }
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/usaiddevops/Microservice-CI-CD-Pipeline.git' // Updated GitHub repository link
+                git branch: 'main', url: 'https://github.com/usaiddevops/Microservice-CI-CD-Pipeline.git' // Your GitHub repository
             }
-           }
-     stage('Build Docker Image') {
-         steps {
-              script {
-                   sh 'DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} .'
-              }
-           }
         }
-
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Enable BuildKit for faster & modern Docker builds
+                    sh 'DOCKER_BUILDKIT=1 docker build -t ${DOCKER_IMAGE}:${env.BUILD_NUMBER} .'
+                }
+            }
         }
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('', 'fe9816bf-8a93-4abe-93bd-a8ad67ddfc38') {
-                        dockerImage.push()
+                    docker.withRegistry('', 'docker-hub-credentials-id') {
+                        sh "docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                     }
                 }
             }
@@ -30,7 +29,6 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 script {
-                    // Run Docker container using shell command instead of docker.run()
                     sh "docker run -d -p 80:80 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
                 }
             }
@@ -38,7 +36,6 @@ pipeline {
     }
     post {
         always {
-            // Cleanup to free space
             sh "docker rmi ${DOCKER_IMAGE}:${env.BUILD_NUMBER} || true"
         }
     }
